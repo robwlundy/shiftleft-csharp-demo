@@ -1,0 +1,58 @@
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  group: shiftleft-token
+
+steps:
+
+- task: CmdLine@2
+  displayName: Download ShiftLeft cli
+  inputs:
+    targetType: 'inline'
+    script: |
+      curl https://cdn.shiftleft.io/download/sl > $(Agent.HomeDirectory)/sl && chmod a+rx $(Agent.HomeDirectory)/sl
+
+- task: DotNetCoreCLI@2
+  displayName: Build console app
+  inputs:
+    command: 'build'
+    projects: '$(Build.SourcesDirectory)\netcoreConsole'
+
+- task: CmdLine@2
+  displayName: Analyze with NG SAST
+  inputs:
+    script: |
+      $(Agent.HomeDirectory)\sl.exe analyze --force --app netfwWebapi --tag branch=$(Build.SourceBranchName) --csharp --cpg netfwWebapi/netfwWebapi.sln
+    workingDirectory: '$(Build.SourcesDirectory)'
+  env:
+    SHIFTLEFT_ACCESS_TOKEN: $(SHIFTLEFT_ACCESS_TOKEN)
+
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+- task: VSTest@2
+  inputs:
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
