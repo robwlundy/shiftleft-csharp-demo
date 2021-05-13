@@ -24,24 +24,24 @@ stages:
     steps:
     - task: NuGetToolInstaller@1
 
-- task: CmdLine@2
-  displayName: Download ShiftLeft cli
-  inputs:
-    targetType: 'inline'
-    script: |
-      curl https://cdn.shiftleft.io/download/sl > $(Agent.HomeDirectory)/sl && chmod a+rx $(Agent.HomeDirectory)/sl
+    - task: CmdLine@2
+      displayName: Download ShiftLeft cli
+      inputs:
+        targetType: 'inline'
+        script: |
+          curl https://cdn.shiftleft.io/download/sl > $(Agent.HomeDirectory)/sl && chmod a+rx $(Agent.HomeDirectory)/sl
 
-- task: DotNetCoreCLI@2
-  displayName: Build console app
-  inputs:
-    command: 'build'
-    projects: '$(Build.SourcesDirectory)\netcoreConsole'
+    - task: DotNetCoreCLI@2
+      displayName: Build console app
+      inputs:
+        command: 'build'
+        projects: '$(Build.SourcesDirectory)\netcoreConsole'
 
-- task: CmdLine@2
-  displayName: Analyze with NG SAST
-  inputs:
-    script: |
-      $(Agent.HomeDirectory)\sl.exe analyze --force --app netfwWebapi --tag branch=$(Build.SourceBranchName) --csharp --cpg netfwWebapi/netfwWebapi.sln
-    workingDirectory: '$(Build.SourcesDirectory)'
-  env:
-    SHIFTLEFT_ACCESS_TOKEN: $(SHIFTLEFT_ACCESS_TOKEN)
+    - task: CmdLine@2
+      displayName: Analyze with NG SAST
+      inputs:
+        script: |
+          $(Agent.HomeDirectory)\sl.exe analyze --force --app netfwWebapi --tag branch=$(Build.SourceBranchName) --csharp --cpg netfwWebapi/netfwWebapi.sln
+        workingDirectory: '$(Build.SourcesDirectory)'
+      env:
+        SHIFTLEFT_ACCESS_TOKEN: $(SHIFTLEFT_ACCESS_TOKEN)
