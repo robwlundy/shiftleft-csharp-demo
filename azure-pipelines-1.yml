@@ -13,10 +13,7 @@ pool:
 variables:
 - group: shiftleft-token
 
-stages:
-- stage: Builders
-  displayName: Build sample applications
-  jobs:
+jobs:
   - job: Build
     displayName: Build .Net and .Net core apps
     pool:
